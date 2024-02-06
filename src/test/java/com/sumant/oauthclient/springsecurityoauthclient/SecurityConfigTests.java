@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.core.StringContains.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -50,7 +51,7 @@ public class SecurityConfigTests {
                 .build();
     }
 
-    @WithMockUser(authorities = "Rana")
+    @WithMockUser(authorities = "VerifiedUser")
     @Test
     public void sayHello_Returns200OK_ForAuthorityRana() throws Exception{
         this.mockMvc.perform(get("/test"))
@@ -68,6 +69,6 @@ public class SecurityConfigTests {
     public void sayHello_Returns302Unauthorised_ForNonAuthenticatedUsers() throws Exception{
         this.mockMvc.perform(get("/test"))
                 .andExpect(status().isFound())
-                .andExpect(header().string("Location", StringContains.containsString("oauth2/authorization/google")));
+                .andExpect(header().string("Location", containsString("oauth2/authorization/google")));
     }
 }

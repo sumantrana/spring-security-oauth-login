@@ -59,7 +59,7 @@ public class SecurityConfig {
                          * AuthorizationManager uses a Supplier<Authentication> which is extracted from SecurityContextHolder
                          * In case we use permitAll() or denyAll(), Authentication lookup is deferred making request processing faster.
                          */
-                        .requestMatchers(new AntPathRequestMatcher("/test/**")).hasAuthority("Rana")
+                        .requestMatchers(new AntPathRequestMatcher("/test/**")).hasAuthority("VerifiedUser")
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
                 //withDefaults() can be replaced by oauth2 -> oauth2.authorizationEndpoint() etc.
@@ -76,11 +76,7 @@ public class SecurityConfig {
      * returned from the Oauth Server.
      * @return
      */
-    /**
-     * This becomes a testing problem because all default users will be appended with this
-     * role. So a mock user will also be appended with the required role and pass the test.
-     * @return
-     */
+
     @Bean
     public GrantedAuthoritiesMapper customAuthorityMapper(){
 
@@ -96,8 +92,8 @@ public class SecurityConfig {
 
                     // Map the claims found in idToken and/or userInfo
                     // to one or more GrantedAuthority's and add it to mappedAuthorities
-                    if ( idToken.hasClaim("family_name") && idToken.getClaim("family_name").equals("Rana")){
-                        GrantedAuthority grantedAuthority = new SimpleGrantedAuthority("Rana");
+                    if ( idToken.hasClaim("email_verified") && idToken.getClaim("email_verified").equals(Boolean.TRUE)){
+                        GrantedAuthority grantedAuthority = new SimpleGrantedAuthority("VerifiedUser");
                         mappedAuthorities.add(grantedAuthority);
                     }
 
@@ -115,6 +111,11 @@ public class SecurityConfig {
             return mappedAuthorities;
         };
 
+        /**
+         * This becomes a testing problem because all default users will be appended with this
+         * role. So a mock user will also be appended with the required role and pass the test.
+         * @return
+         */
 //        SimpleAuthorityMapper simpleAuthorityMapper = new SimpleAuthorityMapper();
 //        simpleAuthorityMapper.setDefaultAuthority("ROLE_sumant.test");
 //        return simpleAuthorityMapper;
