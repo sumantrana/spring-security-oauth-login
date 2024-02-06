@@ -1,21 +1,23 @@
 package com.sumant.oauthclient.springsecurityoauthclient;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import jakarta.servlet.DispatcherType;
-import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
-import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
+import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
+import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-
-import java.util.Collection;
-
-import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -57,7 +59,7 @@ public class SecurityConfig {
                          * AuthorizationManager uses a Supplier<Authentication> which is extracted from SecurityContextHolder
                          * In case we use permitAll() or denyAll(), Authentication lookup is deferred making request processing faster.
                          */
-                        .requestMatchers(new AntPathRequestMatcher("/test/**")).hasAuthority("SCOPE_openid")
+                        .requestMatchers(new AntPathRequestMatcher("/test/**")).hasAuthority("Rana")
                         .anyRequest().authenticated())
                 .csrf(AbstractHttpConfigurer::disable)
                 //withDefaults() can be replaced by oauth2 -> oauth2.authorizationEndpoint() etc.
@@ -81,9 +83,36 @@ public class SecurityConfig {
      */
     @Bean
     public GrantedAuthoritiesMapper customAuthorityMapper(){
-        return authorities -> {
-            System.out.println(authorities);
-            return authorities;
+
+        return (authorities) -> {
+            Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
+
+            authorities.forEach(authority -> {
+                if (OidcUserAuthority.class.isInstance(authority)) {
+                    OidcUserAuthority oidcUserAuthority = (OidcUserAuthority)authority;
+
+                    OidcIdToken idToken = oidcUserAuthority.getIdToken();
+                    OidcUserInfo userInfo = oidcUserAuthority.getUserInfo();
+
+                    // Map the claims found in idToken and/or userInfo
+                    // to one or more GrantedAuthority's and add it to mappedAuthorities
+                    if ( idToken.hasClaim("family_name") && idToken.getClaim("family_name").equals("Rana")){
+                        GrantedAuthority grantedAuthority = new SimpleGrantedAuthority("Rana");
+                        mappedAuthorities.add(grantedAuthority);
+                    }
+
+                } else if (OAuth2UserAuthority.class.isInstance(authority)) {
+                    OAuth2UserAuthority oauth2UserAuthority = (OAuth2UserAuthority)authority;
+
+                    Map<String, Object> userAttributes = oauth2UserAuthority.getAttributes();
+
+                    // Map the attributes found in userAttributes
+                    // to one or more GrantedAuthority's and add it to mappedAuthorities
+
+                }
+            });
+
+            return mappedAuthorities;
         };
 
 //        SimpleAuthorityMapper simpleAuthorityMapper = new SimpleAuthorityMapper();
